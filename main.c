@@ -71,21 +71,19 @@ int titleImageY = screenHeight / 20;  // This places it a bit lower than the top
 DrawTexture(gameTitleImage, titleImageX, titleImageY, WHITE);
 
 
-    // Calculate positions for title and start button
-    int titleFontSize = 40;
-    int titleWidth = MeasureText("Dragon Escape", titleFontSize);
-    int titleX = (screenWidth - titleWidth) / 2;
-    int titleY = screenHeight / 4;
-    Rectangle startButton = { screenWidth / 2 - 100, screenHeight * 3 / 4 - 25, 200, 50 };
+
 
    
     // Game textures
+    Texture2D playButton = LoadTexture("play.png");
+    Texture2D quitButton = LoadTexture("quit.png");
     Texture2D gameBackground = LoadTexture("background.png");
     Texture2D playerTexture = LoadTexture("player.png");
     Texture2D dragonTexture = LoadTexture("dragon.png");
     Texture2D obstacleTexture = LoadTexture("obstacle.png");
     Texture2D escapeDoorTexture = LoadTexture("escapedoor.png");
     Texture2D fireTexture = LoadTexture("fire.png");
+    
     
     // Load fire animation frames
     Texture2D fireTextures[FIRE_FRAMES];
@@ -111,30 +109,45 @@ DrawTexture(gameTitleImage, titleImageX, titleImageY, WHITE);
 
 
     while (!WindowShouldClose()) {
-        if (!startGame) {
-            // Start menu loop
-            if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-                Vector2 mousePosition = GetMousePosition();
-                if (CheckCollisionPointRec(mousePosition, startButton)) {
-    startGame = true;
-    startTime = GetTime(); // Store the start time
-}
-            }
+        // Define button rectangles
+    // Define the button bounds
+    Rectangle playButtonBounds = { screenWidth / 2 - 80, screenHeight / 2 - 5, 200, 100 }; // Play button rectangle
+    Rectangle quitButtonBounds = { screenWidth / 2 - 70, screenHeight / 2 + 200, 200, 100 }; // Quit button rectangle
 
-            BeginDrawing();
-            ClearBackground(RAYWHITE);
+if (!startGame) {
+    BeginDrawing();
+    ClearBackground(RAYWHITE);
 
-            // Draw start menu
-            Rectangle sourceRec = { 0, 0, (float)background.width, (float)background.height };
-            Rectangle destRec = { 0, 0, (float)screenWidth, (float)screenHeight };
-            Vector2 origin = { 0, 0 };
-            DrawTexturePro(background, sourceRec, destRec, origin, 0.0f, WHITE);
-            DrawTexture(gameTitleImage, titleImageX, titleImageY, WHITE);
-            DrawRectangleRec(startButton, LIGHTGRAY);
-            DrawText("Start", startButton.x + startButton.width / 2 - MeasureText("Start", 20) / 2, startButton.y + startButton.height / 2 - 10, 20, DARKGRAY);
+    // Draw the start menu background and title
+    Rectangle sourceRec = { 0, 0, (float)background.width, (float)background.height };
+    Rectangle destRec = { 0, 0, (float)screenWidth, (float)screenHeight };
+    Vector2 origin = { 0, 0 };
+    DrawTexturePro(background, sourceRec, destRec, origin, 0.0f, WHITE);
+    DrawTexture(gameTitleImage, titleImageX, titleImageY, WHITE);
 
-            EndDrawing();
-        } else {
+
+// Draw the "Play" and "Quit" buttons
+DrawTexture(playButton, playButtonBounds.x, playButtonBounds.y, WHITE);
+DrawTexture(quitButton, quitButtonBounds.x, quitButtonBounds.y, WHITE);
+
+    EndDrawing();
+
+    // Handle mouse click logic
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+        Vector2 mousePosition = GetMousePosition();
+
+        // Check if "Play" button was clicked
+        if (CheckCollisionPointRec(mousePosition, playButtonBounds)) {
+            startGame = true;
+            startTime = GetTime(); // Store the start time
+        }
+
+        // Check if "Quit" button was clicked
+        if (CheckCollisionPointRec(mousePosition, quitButtonBounds)) {
+            CloseWindow(); // Close the game window
+        }
+    }
+} else {
             // Game loop
             // Initialize dungeon with open spaces
 for (int i = 0; i < ROWS; i++) {
@@ -168,7 +181,7 @@ dungeon[ROWS - 2][COLS - 1] = '.';  // Upper side of the escape door
 
             dungeon[ROWS - 1][COLS - 1] = 'E';
             if (level > 1) addObstacles(dungeon, 25);
-            if (level == 3) {
+            if (level >= 3) {
                 // Add fire on level 3, randomly placed
                 addFire(dungeon, 20);  // Adjust the number of fire spots
             }
@@ -205,7 +218,7 @@ else if (IsKeyPressed(KEY_D) && playerY < COLS - 1 && dungeon[playerX][playerY +
 
                 if ((playerX == ROWS - 1 || playerX == ROWS - 2) && playerY == COLS - 1) {
     level++;
-    if (level > 3) {
+    if (level > 4) {
         gameOver = true;
     } else {
         break;  // Proceed to the next level if level <= 3
@@ -243,58 +256,32 @@ else if (IsKeyPressed(KEY_D) && playerY < COLS - 1 && dungeon[playerX][playerY +
 }
 
                 if (gameOver) {
-                    // Calculate elapsed time
+    // Calculate elapsed time
     double elapsedTime = GetTime() - startTime;
 
     // Display elapsed time
     char timeText[50];
-    sprintf(timeText, "Time Taken: %.2f secs", elapsedTime);
-    DrawText(timeText, (screenWidth - MeasureText(timeText, 20)) / 2, screenHeight / 2, 20, WHITE);
-    int messageWidth;
-    Rectangle restartButton = { (screenWidth / 2) - 100, screenHeight / 2 + 40, 200, 50 };
-    Rectangle menuButton = { (screenWidth / 2) - 100, screenHeight / 2 + 100, 200, 50 };
+    sprintf(timeText, "Time Taken: %.2f seconds", elapsedTime);
 
-    // Display "You Win!" or "Game Over!" centered on the screen
-    if (level > 3) {
-        // Display "You Win!" message
-        messageWidth = MeasureText("You Win!", 30);
-        DrawText("You Win!", (screenWidth - messageWidth) / 2, screenHeight / 2 - 40, 30, GREEN);
+    // Display "You Win!" or "Game Over!" message
+    if (level > 4) {
+        int winMessageWidth = MeasureText("You Win!", 30);
+        DrawText("You Win!", (screenWidth - winMessageWidth) / 2, screenHeight / 2 - 60, 30, GREEN);
+
+        // Display the elapsed time below the "You Win!" message
+        int timeMessageWidth = MeasureText(timeText, 20);
+        DrawText(timeText, (screenWidth - timeMessageWidth) / 2, screenHeight / 2 - 20, 20, WHITE);
     } else {
-        // Display "Game Over!" message
-        messageWidth = MeasureText("Game Over!", 30);
-        DrawText("Game Over!", (screenWidth - messageWidth) / 2, screenHeight / 2 - 40, 30, ORANGE);
+        int gameOverMessageWidth = MeasureText("Game Over!", 30);
+        DrawText("Game Over!", (screenWidth - gameOverMessageWidth) / 2, screenHeight / 2 - 60, 30, ORANGE);
+
+        // Display the elapsed time below the "Game Over!" message
+        int timeMessageWidth = MeasureText(timeText, 20);
+        DrawText(timeText, (screenWidth - timeMessageWidth) / 2, screenHeight / 2 - 20, 20, WHITE);
     }
+}
 
-    // Draw buttons: Restart and Menu
-    DrawRectangleRec(restartButton, LIGHTGRAY);
-    DrawText("Restart", restartButton.x + (restartButton.width - MeasureText("Restart", 20)) / 2, restartButton.y + 15, 20, DARKGRAY);
-
-    DrawRectangleRec(menuButton, LIGHTGRAY);
-    DrawText("Main Menu", menuButton.x + (menuButton.width - MeasureText("Main Menu", 20)) / 2, menuButton.y + 15, 20, DARKGRAY);
-
-    // Check for button clicks
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-        Vector2 mousePosition = GetMousePosition();
-
-        // Check if restart button was clicked
-        if (CheckCollisionPointRec(mousePosition, restartButton)) {
-            // Restart the game from level 1
-            gameOver = false;
-            level = 1;
-            playerX = playerY = 0;
-            dragonX = rand() % (ROWS - 1);
-            dragonY = rand() % (COLS - 1);
-            startGame = true;  // Start the game loop again
-        }
-        // Check if menu button was clicked
-        else if (CheckCollisionPointRec(mousePosition, menuButton)) {
-            // Go back to landing page
-            gameOver = false;
-            startGame = false;  // Go back to start menu
-            level = 1;
-        }
-    }
-} 
+ 
 
             DrawText(TextFormat("Level: %d", level), 40, TILE_SIZE * 2, 20, WHITE);
                 EndDrawing();
@@ -312,6 +299,9 @@ else if (IsKeyPressed(KEY_D) && playerY < COLS - 1 && dungeon[playerX][playerY +
     UnloadTexture(obstacleTexture);
     UnloadTexture(escapeDoorTexture);
     UnloadTexture(gameTitleImage);
+    UnloadTexture(playButton);
+    UnloadTexture(quitButton);
+
 
 
     CloseWindow();
